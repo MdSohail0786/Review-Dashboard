@@ -1,0 +1,4 @@
+- Inspect project files (README.md, review-dashboard.html) ✅
+- Draft README documentation based on UI features and code behavior ✅
+- Update README.md with clear sections: overview, features, tech stack, how to run, customization, structure, screenshots/preview (optional) ✅
+- Verify links/commands (open in browser) and ensure Markdown renders ✅
