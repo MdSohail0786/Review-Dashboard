@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Review Intelligence Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      :root {
+        --bg-base: #0b1225;
+        --bg-surface: #111d38;
+        --bg-card: #16253f;
+        --bg-card-hover: #1b2d4e;
+        --border: rgba(100, 130, 200, 0.12);
+        --accent: #6c8eff;
+        --accent-glow: rgba(108, 142, 255, 0.18);
+        --text-primary: #e8f0fe;
+        --text-secondary: #8aa0c8;
+        --text-muted: #4d6490;
+        --positive: #22c55e;
+        --positive-bg: rgba(34, 197, 94, 0.1);
+        --neutral: #f59e0b;
+        --neutral-bg: rgba(245, 158, 11, 0.1);
+        --negative: #ef4444;
+        --negative-bg: rgba(239, 68, 68, 0.1);
+        --alert: #fb923c;
+        --alert-bg: rgba(251, 146, 60, 0.1);
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          sans-serif;
+        background-color: var(--bg-base);
+        color: var(--text-primary);
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-base);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 99px;
+      }
+
+      /* Base card */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease,
+          background 0.2s ease;
+      }
+      .card:hover {
+        background: var(--bg-card-hover);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        transform: translateY(-1px);
+      }
+
+      /* Metric ring cards */
+      .metric-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .metric-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 16px;
+        pointer-events: none;
+      }
+      .metric-card.positive::before {
+        background: radial-gradient(
+          ellipse at top right,
+          rgba(34, 197, 94, 0.08) 0%,
+          transparent 70%
+        );
+      }
+      .metric-card.neutral::before {
+        background: radial-gradient(
+          ellipse at top right,
+          rgba(245, 158, 11, 0.08) 0%,
+          transparent 70%
+        );
+      }
+      .metric-card.negative::before {
+        background: radial-gradient(
+          ellipse at top right,
+          rgba(239, 68, 68, 0.08) 0%,
+          transparent 70%
+        );
+      }
+
+      /* SVG ring */
+      .ring-svg {
+        transform: rotate(-90deg);
+      }
+      .ring-track {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.06);
+        stroke-width: 6;
+      }
+      .ring-fill {
+        fill: none;
+        stroke-width: 6;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Platform badges */
+      .badge-amazon {
+        background: rgba(255, 153, 0, 0.15);
+        color: #ffa040;
+        border: 1px solid rgba(255, 153, 0, 0.25);
+      }
+      .badge-shopify {
+        background: rgba(100, 214, 120, 0.12);
+        color: #60d678;
+        border: 1px solid rgba(100, 214, 120, 0.22);
+      }
+      .badge-google {
+        background: rgba(108, 142, 255, 0.12);
+        color: #879dff;
+        border: 1px solid rgba(108, 142, 255, 0.22);
+      }
+
+      /* Sentiment tags */
+      .tag-positive {
+        background: var(--positive-bg);
+        color: var(--positive);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      .tag-neutral {
+        background: var(--neutral-bg);
+        color: var(--neutral);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+      .tag-negative {
+        background: var(--negative-bg);
+        color: var(--negative);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      /* Review card accent bar */
+      .review-card {
+        position: relative;
+        padding-left: 1.25rem;
+      }
+      .review-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 3px;
+        border-radius: 99px;
+      }
+      .review-card.positive::before {
+        background: var(--positive);
+      }
+      .review-card.neutral::before {
+        background: var(--neutral);
+      }
+      .review-card.negative::before {
+        background: var(--negative);
+      }
+
+      /* Alert cards */
+      .alert-item {
+        border-left: 3px solid var(--alert);
+        background: var(--alert-bg);
+        border-radius: 0 10px 10px 0;
+        padding: 0.75rem 1rem;
+        transition: background 0.2s;
+      }
+      .alert-item:hover {
+        background: rgba(251, 146, 60, 0.16);
+      }
+      .alert-item.high {
+        border-left-color: var(--negative);
+        background: var(--negative-bg);
+      }
+      .alert-item.high:hover {
+        background: rgba(239, 68, 68, 0.16);
+      }
+
+      /* Buttons */
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        padding: 0.45rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition:
+          opacity 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .btn-primary:hover {
+        opacity: 0.88;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(108, 142, 255, 0.35);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.45rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          color 0.15s,
+          background 0.15s;
+      }
+      .btn-ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-glow);
+      }
+
+      /* Filter chips */
+      .chip {
+        padding: 0.35rem 0.85rem;
+        border-radius: 99px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        cursor: pointer;
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .chip:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
+      }
+      .chip.active {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* Search bar */
+      .search-bar {
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        width: 100%;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+      .search-bar::placeholder {
+        color: var(--text-muted);
+      }
+      .search-bar:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      /* Modal */
+      #modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(5, 10, 25, 0.8);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        padding: 1rem;
+      }
+      #modal-overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #modal-box {
+        background: var(--bg-card);
+        border: 1px solid rgba(108, 142, 255, 0.2);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+        transform: scale(0.95) translateY(12px);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+      }
+      #modal-overlay.open #modal-box {
+        transform: scale(1) translateY(0);
+      }
+
+      /* Star rendering */
+      .stars {
+        display: inline-flex;
+        gap: 1px;
+      }
+      .star-filled {
+        color: #fbbf24;
+      }
+      .star-empty {
+        color: rgba(255, 255, 255, 0.15);
+      }
+
+      /* Notification dot */
+      .notif-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--negative);
+        border: 2px solid var(--bg-base);
+      }
+
+      /* Icon circle */
+      .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      /* Typing indicator for AI */
+      @keyframes blink {
+        0%,
+        80%,
+        100% {
+          opacity: 0;
+        }
+        40% {
+          opacity: 1;
+        }
+      }
+      .dot-1 {
+        animation: blink 1.2s ease infinite 0s;
+      }
+      .dot-2 {
+        animation: blink 1.2s ease infinite 0.2s;
+      }
+      .dot-3 {
+        animation: blink 1.2s ease infinite 0.4s;
+      }
+
+      /* Sidebar sticky */
+      @media (min-width: 1024px) {
+        .sidebar-sticky {
+          position: sticky;
+          top: 1.5rem;
+        }
+      }
+
+      /* Header glass */
+      header {
+        background: rgba(11, 18, 37, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 30;
+      }
+
+      /* Section label */
+      .section-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      /* Copy success */
+      #copy-success {
+        display: none;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--positive);
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+      #copy-success.show {
+        display: flex;
+      }
+
+      /* Review card hover */
+      .review-card-wrap {
+        transition: all 0.2s;
+        border-radius: 14px;
+      }
+
+      /* Empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+        gap: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================
+     HEADER
+============================================================ -->
+    <header>
+      <div
+        class="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between"
+      >
+        <!-- Logo + Title -->
+        <div class="flex items-center gap-3">
+          <div
+            class="icon-circle"
+            style="
+              background: var(--accent-glow);
+              border: 1px solid rgba(108, 142, 255, 0.3);
+            "
+          >
+            <i class="fa-solid fa-brain text-[var(--accent)] text-base"></i>
+          </div>
+          <div>
+            <h1
+              class="text-sm font-700 text-[var(--text-primary)] leading-tight font-semibold"
+              style="letter-spacing: -0.01em"
+            >
+              AI Review Intelligence
+            </h1>
+            <p class="text-xs text-[var(--text-muted)] hidden sm:block">
+              Monitor customer sentiment across all platforms
+            </p>
+          </div>
+        </div>
+        <!-- Right controls -->
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-[var(--text-muted)] hidden md:block"
+            >Last synced:
+            <span class="text-[var(--text-secondary)]">2 min ago</span></span
+          >
+          <!-- Notification -->
+          <button
+            aria-label="Notifications"
+            class="relative w-9 h-9 flex items-center justify-center rounded-10 hover:bg-[var(--bg-surface)] transition-colors rounded-lg"
+          >
+            <i
+              class="fa-regular fa-bell text-[var(--text-secondary)] text-sm"
+            ></i>
+            <span class="notif-dot"></span>
+          </button>
+          <!-- Avatar -->
+          <button
+            aria-label="User menu"
+            class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs text-white"
+            style="background: linear-gradient(135deg, #6c8eff, #8b5cf6)"
+          >
+            AK
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+     MAIN LAYOUT
+============================================================ -->
+    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <!-- ========================================================
+       METRIC CARDS
+  ======================================================== -->
+      <section aria-label="Sentiment overview">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Positive -->
+          <div class="card metric-card positive p-5 flex items-center gap-5">
+            <div class="relative flex-shrink-0">
+              <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+                <circle class="ring-track" cx="36" cy="36" r="28" />
+                <circle
+                  class="ring-fill"
+                  cx="36"
+                  cy="36"
+                  r="28"
+                  stroke="#22c55e"
+                  stroke-dasharray="175.9"
+                  stroke-dashoffset="38.7"
+                  data-total="175.9"
+                  data-pct="78"
+                />
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <i
+                  class="fa-regular fa-face-smile"
+                  style="color: #22c55e; font-size: 1.1rem"
+                ></i>
+              </div>
+            </div>
+            <div>
+              <p class="section-label mb-0.5">Positive</p>
+              <p
+                class="text-3xl font-bold text-[var(--positive)]"
+                style="letter-spacing: -0.03em"
+              >
+                78%
+              </p>
+              <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                of 4,821 reviews
+              </p>
+            </div>
+          </div>
+
+          <!-- Neutral -->
+          <div class="card metric-card neutral p-5 flex items-center gap-5">
+            <div class="relative flex-shrink-0">
+              <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+                <circle class="ring-track" cx="36" cy="36" r="28" />
+                <circle
+                  class="ring-fill"
+                  cx="36"
+                  cy="36"
+                  r="28"
+                  stroke="#f59e0b"
+                  stroke-dasharray="175.9"
+                  stroke-dashoffset="149.5"
+                  data-total="175.9"
+                  data-pct="15"
+                />
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <i
+                  class="fa-regular fa-face-meh"
+                  style="color: #f59e0b; font-size: 1.1rem"
+                ></i>
+              </div>
+            </div>
+            <div>
+              <p class="section-label mb-0.5">Neutral</p>
+              <p
+                class="text-3xl font-bold text-[var(--neutral)]"
+                style="letter-spacing: -0.03em"
+              >
+                15%
+              </p>
+              <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                of 4,821 reviews
+              </p>
+            </div>
+          </div>
+
+          <!-- Negative -->
+          <div class="card metric-card negative p-5 flex items-center gap-5">
+            <div class="relative flex-shrink-0">
+              <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+                <circle class="ring-track" cx="36" cy="36" r="28" />
+                <circle
+                  class="ring-fill"
+                  cx="36"
+                  cy="36"
+                  r="28"
+                  stroke="#ef4444"
+                  stroke-dasharray="175.9"
+                  stroke-dashoffset="163.6"
+                  data-total="175.9"
+                  data-pct="7"
+                />
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <i
+                  class="fa-regular fa-face-frown"
+                  style="color: #ef4444; font-size: 1.1rem"
+                ></i>
+              </div>
+            </div>
+            <div>
+              <p class="section-label mb-0.5">Negative</p>
+              <p
+                class="text-3xl font-bold text-[var(--negative)]"
+                style="letter-spacing: -0.03em"
+              >
+                7%
+              </p>
+              <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                of 4,821 reviews
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+       MAIN CONTENT: REVIEWS + SIDEBAR
+  ======================================================== -->
+      <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <!-- ====================================================
+         REVIEWS FEED (70%)
+    ==================================================== -->
+        <section class="flex-1 min-w-0 space-y-4" aria-label="Review feed">
+          <!-- Search + Filters -->
+          <div class="space-y-3">
+            <div class="relative">
+              <i
+                class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none"
+              ></i>
+              <input
+                id="search-input"
+                type="search"
+                class="search-bar"
+                placeholder="Search reviews, platforms, or keywords…"
+                aria-label="Search reviews"
+              />
+            </div>
+            <!-- Filter chips -->
+            <div
+              class="flex flex-wrap gap-2"
+              role="group"
+              aria-label="Filter reviews"
+            >
+              <button class="chip active" data-filter="all">All Reviews</button>
+              <button class="chip" data-filter="amazon">
+                <i class="fa-brands fa-amazon mr-1"></i>Amazon
+              </button>
+              <button class="chip" data-filter="shopify">Shopify</button>
+              <button class="chip" data-filter="google">
+                <i class="fa-brands fa-google mr-1"></i>Google
+              </button>
+              <button class="chip" data-filter="positive">
+                <span
+                  class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1 align-middle"
+                ></span
+                >Positive
+              </button>
+              <button class="chip" data-filter="neutral">
+                <span
+                  class="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 align-middle"
+                ></span
+                >Neutral
+              </button>
+              <button class="chip" data-filter="negative">
+                <span
+                  class="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-1 align-middle"
+                ></span
+                >Negative
+              </button>
+            </div>
+          </div>
+
+          <!-- Section header -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-semibold text-[var(--text-primary)]">
+                Unified Review Feed
+              </h2>
+              <p class="text-xs text-[var(--text-muted)]">
+                <span id="review-count">10</span> reviews
+              </p>
+            </div>
+            <span class="section-label">Sorted by: Recent</span>
+          </div>
+
+          <!-- Review list -->
+          <div id="review-list" class="space-y-3"></div>
+
+          <!-- Empty state -->
+          <div id="empty-state" class="hidden">
+            <div class="card empty-state">
+              <i
+                class="fa-regular fa-rectangle-list text-3xl text-[var(--text-muted)]"
+              ></i>
+              <p class="text-sm font-medium text-[var(--text-secondary)]">
+                No reviews match your filters
+              </p>
+              <p class="text-xs text-[var(--text-muted)]">
+                Try adjusting your search or filter chips above
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================
+         ALERTS SIDEBAR (30%)
+    ==================================================== -->
+        <aside
+          class="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 sidebar-sticky space-y-4"
+          aria-label="Alerts panel"
+        >
+          <div class="card p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i
+                  class="fa-solid fa-triangle-exclamation text-[var(--alert)] text-sm"
+                ></i>
+                <h2 class="text-sm font-semibold text-[var(--text-primary)]">
+                  Urgent Alerts
+                </h2>
+              </div>
+              <span
+                class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                style="background: var(--negative-bg); color: var(--negative)"
+                >4 Active</span
+              >
+            </div>
+
+            <div class="space-y-2">
+              <!-- Alert 1 - HIGH -->
+              <div class="alert-item high">
+                <div class="flex items-start gap-2">
+                  <i
+                    class="fa-solid fa-circle-xmark text-[var(--negative)] text-xs mt-0.5 flex-shrink-0"
+                  ></i>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-xs font-semibold text-[var(--text-primary)] leading-snug"
+                    >
+                      Product X received 12 new 1-star reviews
+                    </p>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                      Amazon · 2 hours ago
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="btn-ghost mt-2 w-full justify-center text-xs"
+                  aria-label="View details for Product X alert"
+                >
+                  View Details
+                </button>
+              </div>
+
+              <!-- Alert 2 -->
+              <div class="alert-item">
+                <div class="flex items-start gap-2">
+                  <i
+                    class="fa-solid fa-triangle-exclamation text-[var(--alert)] text-xs mt-0.5 flex-shrink-0"
+                  ></i>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-xs font-semibold text-[var(--text-primary)] leading-snug"
+                    >
+                      Quality complaints rising on Amazon
+                    </p>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                      +34% vs last week
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="btn-ghost mt-2 w-full justify-center text-xs"
+                  aria-label="View details for quality alert"
+                >
+                  View Details
+                </button>
+              </div>
+
+              <!-- Alert 3 -->
+              <div class="alert-item">
+                <div class="flex items-start gap-2">
+                  <i
+                    class="fa-solid fa-truck text-[var(--alert)] text-xs mt-0.5 flex-shrink-0"
+                  ></i>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-xs font-semibold text-[var(--text-primary)] leading-snug"
+                    >
+                      Delivery delays trending on Shopify
+                    </p>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                      18 mentions this week
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="btn-ghost mt-2 w-full justify-center text-xs"
+                  aria-label="View details for delivery alert"
+                >
+                  View Details
+                </button>
+              </div>
+
+              <!-- Alert 4 -->
+              <div class="alert-item">
+                <div class="flex items-start gap-2">
+                  <i
+                    class="fa-solid fa-box-open text-[var(--alert)] text-xs mt-0.5 flex-shrink-0"
+                  ></i>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-xs font-semibold text-[var(--text-primary)] leading-snug"
+                    >
+                      Packaging damage mentions up 18%
+                    </p>
+                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                      Google + Shopify · 3 days
+                    </p>
+                  </div>
+                </div>
+                <button
+                  class="btn-ghost mt-2 w-full justify-center text-xs"
+                  aria-label="View details for packaging alert"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick stats card -->
+          <div class="card p-4 space-y-3">
+            <p class="section-label">Platform Breakdown</p>
+            <div class="space-y-2.5">
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[var(--text-secondary)]"
+                    ><i class="fa-brands fa-amazon mr-1 text-[#ffa040]"></i
+                    >Amazon</span
+                  >
+                  <span class="text-[var(--text-secondary)] font-medium"
+                    >2,140</span
+                  >
+                </div>
+                <div
+                  class="h-1.5 rounded-full"
+                  style="background: rgba(255, 255, 255, 0.07)"
+                >
+                  <div
+                    class="h-1.5 rounded-full"
+                    style="width: 44%; background: #ffa040"
+                  ></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[var(--text-secondary)]"
+                    ><i class="fa-solid fa-bag-shopping mr-1 text-[#60d678]"></i
+                    >Shopify</span
+                  >
+                  <span class="text-[var(--text-secondary)] font-medium"
+                    >1,698</span
+                  >
+                </div>
+                <div
+                  class="h-1.5 rounded-full"
+                  style="background: rgba(255, 255, 255, 0.07)"
+                >
+                  <div
+                    class="h-1.5 rounded-full"
+                    style="width: 35%; background: #60d678"
+                  ></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[var(--text-secondary)]"
+                    ><i class="fa-brands fa-google mr-1 text-[#879dff]"></i
+                    >Google</span
+                  >
+                  <span class="text-[var(--text-secondary)] font-medium"
+                    >983</span
+                  >
+                </div>
+                <div
+                  class="h-1.5 rounded-full"
+                  style="background: rgba(255, 255, 255, 0.07)"
+                >
+                  <div
+                    class="h-1.5 rounded-full"
+                    style="width: 21%; background: #879dff"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- ============================================================
+     AI REPLY MODAL
+============================================================ -->
+    <div
+      id="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div id="modal-box">
+        <!-- Modal header -->
+        <div
+          class="flex items-center justify-between px-5 py-4"
+          style="border-bottom: 1px solid var(--border)"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="icon-circle"
+              style="
+                width: 32px;
+                height: 32px;
+                background: var(--accent-glow);
+                border: 1px solid rgba(108, 142, 255, 0.3);
+              "
+            >
+              <i
+                class="fa-solid fa-wand-magic-sparkles text-[var(--accent)] text-xs"
+              ></i>
+            </div>
+            <div>
+              <p
+                id="modal-title"
+                class="text-sm font-semibold text-[var(--text-primary)]"
+              >
+                AI-Generated Reply
+              </p>
+              <p class="text-xs text-[var(--text-muted)]">
+                Review before sending — you're in control
+              </p>
+            </div>
+          </div>
+          <button
+            id="modal-close"
+            aria-label="Close modal"
+            class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Review reference -->
+        <div
+          class="px-5 py-3"
+          style="
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          <p class="section-label mb-1">Replying to</p>
+          <p
+            id="modal-review-ref"
+            class="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2"
+          ></p>
+        </div>
+
+        <!-- AI reply body -->
+        <div class="px-5 py-4">
+          <div id="modal-typing" class="flex items-center gap-1.5 py-3">
+            <div
+              class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] dot-1"
+            ></div>
+            <div
+              class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] dot-2"
+            ></div>
+            <div
+              class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] dot-3"
+            ></div>
+            <span class="text-xs text-[var(--text-muted)] ml-1"
+              >Generating reply…</span
+            >
+          </div>
+          <div
+            id="modal-reply-text"
+            class="hidden text-sm text-[var(--text-secondary)] leading-relaxed p-4 rounded-xl"
+            style="
+              background: rgba(108, 142, 255, 0.06);
+              border: 1px solid rgba(108, 142, 255, 0.15);
+              white-space: pre-line;
+            "
+          ></div>
+        </div>
+
+        <!-- Modal footer -->
+        <div
+          class="flex items-center justify-between px-5 py-4"
+          style="border-top: 1px solid var(--border)"
+        >
+          <div id="copy-success" role="status" aria-live="polite">
+            <i
+              class="fa-solid fa-circle-check text-[var(--positive)] text-sm"
+            ></i>
+            <span>Reply copied!</span>
+          </div>
+          <div class="flex items-center gap-2 ml-auto">
+            <button
+              id="modal-close-btn"
+              class="btn-ghost text-xs"
+              aria-label="Close without copying"
+            >
+              Cancel
+            </button>
+            <button
+              id="copy-btn"
+              class="btn-primary text-xs"
+              aria-label="Copy reply to clipboard"
+              disabled
+            >
+              <i class="fa-regular fa-copy"></i> Copy Reply
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+    <script>
+      // ─── DATA ───────────────────────────────────────────────────────────────────
+      const reviews = [
+        {
+          id: 1,
+          platform: "amazon",
+          reviewer: "Marcus Chen",
+          stars: 5,
+          text: "Absolutely love this product! It arrived earlier than expected and the quality is outstanding. Will definitely be ordering again for my whole family.",
+          sentiment: "positive",
+          date: "Jun 15, 2025",
+          reply: `Hi Marcus,\n\nThank you so much for your wonderful review! We're thrilled to hear that your order arrived ahead of schedule and that you're enjoying the quality.\n\nCustomers like you make all the difference. We look forward to welcoming you back soon!\n\nWarm regards,\nCustomer Care Team`,
+        },
+        {
+          id: 2,
+          platform: "shopify",
+          reviewer: "Priya Nair",
+          stars: 1,
+          text: "Terrible experience. The item came damaged and the packaging was completely crushed. I've tried contacting support three times with no response. Very disappointed.",
+          sentiment: "negative",
+          date: "Jun 14, 2025",
+          reply: `Hi Priya,\n\nWe're truly sorry to hear about the damage to your order and the difficulty reaching our support team — that's not the experience we want for you.\n\nWe'd like to make this right immediately. Please reply directly to this message with your order number and we'll send a replacement or full refund, whichever you prefer.\n\nSincerely,\nCustomer Care Team`,
+        },
+        {
+          id: 3,
+          platform: "google",
+          reviewer: "James O'Brien",
+          stars: 3,
+          text: "Product is decent but delivery took 12 days when I was promised 5. The item itself works as described, just not impressed with shipping.",
+          sentiment: "neutral",
+          date: "Jun 13, 2025",
+          reply: `Hi James,\n\nThank you for taking the time to share your experience. We're glad the product is working well for you.\n\nWe sincerely apologize for the shipping delay — 12 days is not acceptable and we've flagged this with our logistics partner. Your feedback directly helps us improve.\n\nBest,\nCustomer Care Team`,
+        },
+        {
+          id: 4,
+          platform: "amazon",
+          reviewer: "Sofia Rivera",
+          stars: 5,
+          text: "Five stars all the way. The build quality is premium, setup was straightforward, and it looks exactly like the photos. Best purchase I've made this year.",
+          sentiment: "positive",
+          date: "Jun 13, 2025",
+          reply: `Hi Sofia,\n\nThank you for your glowing review — we're so happy to hear it! Our team works hard to ensure the product matches expectations, and comments like yours mean a lot.\n\nWe appreciate your support!\n\nWarm regards,\nCustomer Care Team`,
+        },
+        {
+          id: 5,
+          platform: "shopify",
+          reviewer: "David Kim",
+          stars: 2,
+          text: "Quality has gone downhill compared to my previous order 6 months ago. The materials feel cheaper and the stitching came loose after just two uses.",
+          sentiment: "negative",
+          date: "Jun 12, 2025",
+          reply: `Hi David,\n\nThank you for flagging this — we take quality consistency very seriously, and we're sorry your recent order didn't match your previous experience.\n\nWe'd love to look into this for you. Please reach out with your order number and we'll investigate and make it right.\n\nBest,\nCustomer Care Team`,
+        },
+        {
+          id: 6,
+          platform: "google",
+          reviewer: "Aisha Thompson",
+          stars: 4,
+          text: "Really solid product overall. Knocked off one star because the instruction manual is pretty unclear — took me a while to set it up. Once running though, it's great.",
+          sentiment: "positive",
+          date: "Jun 12, 2025",
+          reply: `Hi Aisha,\n\nThank you for your thoughtful review! We're delighted to hear you're enjoying the product after setup.\n\nYour point about the instruction manual is noted — we're currently working on a clearer version and your feedback has been passed to the product team.\n\nAppreciate you!\nCustomer Care Team`,
+        },
+        {
+          id: 7,
+          platform: "amazon",
+          reviewer: "Robert Okafor",
+          stars: 1,
+          text: "DO NOT BUY. Completely false advertising. The product in the listing looks nothing like what I received. Color is different, size is smaller, and it stopped working after one day.",
+          sentiment: "negative",
+          date: "Jun 11, 2025",
+          reply: `Hi Robert,\n\nWe're very sorry to hear this — what you've described is completely unacceptable and doesn't meet our standards.\n\nWe'd like to resolve this for you right away. Please contact us with your order ID and we'll arrange a full replacement or refund, no questions asked.\n\nApologies again,\nCustomer Care Team`,
+        },
+        {
+          id: 8,
+          platform: "shopify",
+          reviewer: "Mei Zhang",
+          stars: 5,
+          text: "Ordered as a gift and the recipient absolutely loved it. The gift wrapping option was a nice touch. Arrived in perfect condition with a handwritten note. Highly recommend!",
+          sentiment: "positive",
+          date: "Jun 11, 2025",
+          reply: `Hi Mei,\n\nWhat a lovely thing to share — thank you! We're so pleased your gift arrived safely and made someone happy.\n\nOur gift team puts a lot of care into those personal touches, and it's wonderful to know it made a difference.\n\nWith gratitude,\nCustomer Care Team`,
+        },
+        {
+          id: 9,
+          platform: "google",
+          reviewer: "Carlos Mendez",
+          stars: 3,
+          text: "Average experience. Nothing exceptional but nothing bad either. Product does what it says. Customer service was helpful when I had a question. Might reorder.",
+          sentiment: "neutral",
+          date: "Jun 10, 2025",
+          reply: `Hi Carlos,\n\nThank you for your honest feedback! We're glad our support team was able to help, and we hope your experience continues to improve.\n\nIf you do reorder, don't hesitate to reach out with any questions.\n\nBest,\nCustomer Care Team`,
+        },
+        {
+          id: 10,
+          platform: "amazon",
+          reviewer: "Fatima Al-Rashid",
+          stars: 4,
+          text: "Great product for the price. I've compared it against competitors twice the cost and honestly this holds up well. Minor complaint: the color selection online could be wider.",
+          sentiment: "positive",
+          date: "Jun 10, 2025",
+          reply: `Hi Fatima,\n\nThank you for the kind words and the thoughtful comparison! We're proud to offer quality that competes above our price point.\n\nYour feedback on color options has been noted and shared with our product team — stay tuned!\n\nWarm regards,\nCustomer Care Team`,
+        },
+      ];
+
+      // ─── RENDER HELPERS ──────────────────────────────────────────────────────────
+      function renderStars(count) {
+        let html =
+          '<span class="stars" aria-label="' + count + ' out of 5 stars">';
+        for (let i = 1; i <= 5; i++) {
+          html += `<i class="fa-solid fa-star text-xs ${i <= count ? "star-filled" : "star-empty"}"></i>`;
+        }
+        return html + "</span>";
+      }
+
+      function platformBadge(platform) {
+        const map = {
+          amazon: [
+            "badge-amazon",
+            '<i class="fa-brands fa-amazon mr-1"></i>Amazon',
+          ],
+          shopify: ["badge-shopify", "Shopify"],
+          google: [
+            "badge-google",
+            '<i class="fa-brands fa-google mr-1"></i>Google',
+          ],
+        };
+        const [cls, label] = map[platform];
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${cls}">${label}</span>`;
+      }
+
+      function sentimentTag(sentiment) {
+        const map = {
+          positive: [
+            "tag-positive",
+            '<i class="fa-solid fa-circle-check mr-1 text-[10px]"></i>Positive',
+          ],
+          neutral: [
+            "tag-neutral",
+            '<i class="fa-solid fa-minus mr-1 text-[10px]"></i>Neutral',
+          ],
+          negative: [
+            "tag-negative",
+            '<i class="fa-solid fa-circle-xmark mr-1 text-[10px]"></i>Negative',
+          ],
+        };
+        const [cls, label] = map[sentiment];
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold ${cls}">${label}</span>`;
+      }
+
+      function renderReview(r) {
+        return `
+    <div class="review-card-wrap" data-platform="${r.platform}" data-sentiment="${r.sentiment}" data-text="${r.text.toLowerCase()} ${r.reviewer.toLowerCase()}">
+      <div class="card review-card ${r.sentiment} p-4 space-y-3">
+        <div class="flex flex-wrap items-center gap-2 justify-between">
+          <div class="flex items-center gap-2 flex-wrap">
+            ${platformBadge(r.platform)}
+            ${sentimentTag(r.sentiment)}
+          </div>
+          <span class="text-xs text-[var(--text-muted)]">${r.date}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white"
+            style="background:linear-gradient(135deg,var(--accent),#8b5cf6);">
+            ${r.reviewer.charAt(0)}
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-[var(--text-primary)] leading-none">${r.reviewer}</p>
+            <div class="mt-0.5">${renderStars(r.stars)}</div>
+          </div>
+        </div>
+        <p class="text-sm text-[var(--text-secondary)] leading-relaxed">${r.text}</p>
+        <div class="flex justify-end">
+          <button class="btn-primary text-xs generate-reply-btn" data-id="${r.id}" aria-label="Generate AI reply for ${r.reviewer}'s review">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Reply
+          </button>
+        </div>
+      </div>
+    </div>`;
+      }
+
+      // ─── RENDER + FILTER ─────────────────────────────────────────────────────────
+      let activeFilter = "all";
+      let searchTerm = "";
+
+      function applyFilters() {
+        const cards = document.querySelectorAll(".review-card-wrap");
+        let visible = 0;
+
+        cards.forEach((card) => {
+          const platform = card.dataset.platform;
+          const sentiment = card.dataset.sentiment;
+          const text = card.dataset.text;
+
+          const matchFilter =
+            activeFilter === "all" ||
+            activeFilter === platform ||
+            activeFilter === sentiment;
+
+          const matchSearch = !searchTerm || text.includes(searchTerm);
+
+          const show = matchFilter && matchSearch;
+          card.style.display = show ? "block" : "none";
+          if (show) visible++;
+        });
+
+        document.getElementById("review-count").textContent = visible;
+        document
+          .getElementById("empty-state")
+          .classList.toggle("hidden", visible > 0);
+      }
+
+      // Init render
+      const list = document.getElementById("review-list");
+      list.innerHTML = reviews.map(renderReview).join("");
+
+      // Filter chip clicks
+      document.querySelectorAll(".chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          document
+            .querySelectorAll(".chip")
+            .forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+          activeFilter = chip.dataset.filter;
+          applyFilters();
+        });
+      });
+
+      // Search
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        searchTerm = e.target.value.toLowerCase().trim();
+        applyFilters();
+      });
+
+      // ─── MODAL ───────────────────────────────────────────────────────────────────
+      const overlay = document.getElementById("modal-overlay");
+      const modalClose = document.getElementById("modal-close");
+      const modalCloseBtn = document.getElementById("modal-close-btn");
+      const copyBtn = document.getElementById("copy-btn");
+      const copySuccess = document.getElementById("copy-success");
+      const typingEl = document.getElementById("modal-typing");
+      const replyTextEl = document.getElementById("modal-reply-text");
+      const reviewRefEl = document.getElementById("modal-review-ref");
+
+      function openModal(reviewId) {
+        const r = reviews.find((x) => x.id === reviewId);
+        if (!r) return;
+
+        // Reset state
+        typingEl.style.display = "flex";
+        replyTextEl.classList.add("hidden");
+        replyTextEl.textContent = "";
+        copyBtn.disabled = true;
+        copySuccess.classList.remove("show");
+        reviewRefEl.textContent = `"${r.text}"`;
+
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        modalClose.focus();
+
+        // Simulate AI generation delay
+        setTimeout(() => {
+          typingEl.style.display = "none";
+          replyTextEl.textContent = r.reply;
+          replyTextEl.classList.remove("hidden");
+          copyBtn.disabled = false;
+        }, 1400);
+      }
+
+      function closeModal() {
+        overlay.classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      // Delegate: Generate Reply buttons
+      list.addEventListener("click", (e) => {
+        const btn = e.target.closest(".generate-reply-btn");
+        if (btn) openModal(parseInt(btn.dataset.id));
+      });
+
+      modalClose.addEventListener("click", closeModal);
+      modalCloseBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal();
+      });
+
+      // Keyboard: Escape closes modal
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay.classList.contains("open"))
+          closeModal();
+      });
+
+      // Copy reply
+      copyBtn.addEventListener("click", () => {
+        const text = replyTextEl.textContent;
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+          copySuccess.classList.add("show");
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => {
+            copySuccess.classList.remove("show");
+            copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Reply';
+          }, 2500);
+        });
+      });
+
+      // ─── RING ANIMATION on load ──────────────────────────────────────────────────
+      window.addEventListener("load", () => {
+        document.querySelectorAll(".ring-fill").forEach((circle) => {
+          const pct = parseFloat(circle.dataset.pct) / 100;
+          const total = parseFloat(circle.dataset.total);
+          const offset = total - pct * total;
+          // Start from full offset (empty), animate to target
+          circle.style.strokeDashoffset = total;
+          requestAnimationFrame(() => {
+            circle.style.strokeDashoffset = offset;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
